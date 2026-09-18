@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>NoSquish</title>
+<meta name="description" content="Prep 4K / 120fps footage so TikTok's encoder takes as little quality as possible. Analyzer, question flow, and copy-paste FFmpeg recipes." />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎞️</text></svg>" />
+<link rel="stylesheet" href="assets/style.css" />
+</head>
+<body>
+
+<header class="topbar">
+  <a class="brand" href="#top">
+    <span class="brand-mark">NS</span>
+    <span class="brand-name">NoSquish</span>
+  </a>
+  <nav class="topnav">
+    <a href="#flow">Question flow</a>
+    <a href="#analyze">Analyzer</a>
+    <a href="#recipe">Recipe</a>
+    <a href="#steps">Steps</a>
+    <a href="#truth">FAQ</a>
+  </nav>
+</header>
+
+<main id="top">
+
+  <!-- ─────────────── HERO ─────────────── -->
+  <section class="hero">
+    <p class="eyebrow">4K · 120fps · vertical</p>
+    <h1>Stop TikTok from <span class="grad">mangling</span> your footage.</h1>
+    <p class="lede">
+      Answer six questions, drop in your file, and get the exact export settings and
+      FFmpeg command that survive TikTok's encoder with the most detail intact.
+    </p>
+
+    <div class="truth-banner">
+      <strong>Read this first.</strong>
+      There is no such thing as an uncompressed TikTok upload. TikTok re-encodes
+      <em>every</em> video on its servers — no website, app, or trick can switch that off.
+      What you <em>can</em> control is what its encoder receives. Feed it a clean, high-bitrate,
+      correctly-sized file and the re-encode is nearly invisible. Feed it a phone-app export
+      with stickers burned in and it looks like mush. This tool does the first thing.
+    </div>
+
+    <div class="hero-cta">
+      <a class="btn btn-primary" href="#flow">Start the question flow</a>
+      <a class="btn btn-ghost" href="#analyze">Skip — just check my file</a>
+    </div>
+
+    <ul class="hero-facts">
+      <li><span>1080×1920</span>TikTok's real delivery canvas</li>
+      <li><span>≤60fps</span>what playback actually shows</li>
+      <li><span>~2–8 Mbps</span>typical bitrate you get back</li>
+    </ul>
+  </section>
+
+  <!-- ─────────────── WIZARD ─────────────── -->
+  <section id="flow" class="panel">
+    <h2><span class="num">1</span> Question flow</h2>
+    <p class="sub">Six questions. Each one changes the recipe at the bottom of the page.</p>
+
+    <div class="wizard" id="wizard">
+      <div class="wiz-progress"><div class="wiz-bar" id="wizBar"></div></div>
+      <div class="wiz-step" id="wizStep"><!-- injected --></div>
+      <div class="wiz-nav">
+        <button class="btn btn-ghost" id="wizBack" type="button">Back</button>
+        <span class="wiz-count" id="wizCount"></span>
+        <button class="btn btn-ghost" id="wizRestart" type="button">Start over</button>
+      </div>
+    </div>
+
+    <div class="wiz-summary" id="wizSummary" hidden></div>
+  </section>
+
+  <!-- ─────────────── ANALYZER ─────────────── -->
+  <section id="analyze" class="panel">
+    <h2><span class="num">2</span> Analyze your file</h2>
+    <p class="sub">
+      Runs entirely in your browser. Nothing is uploaded anywhere — the file never leaves this tab.
+    </p>
+
+    <div class="drop" id="drop" tabindex="0" role="button" aria-label="Choose a video file">
+      <input type="file" id="fileInput" accept="video/*" hidden />
+      <div class="drop-inner">
+        <div class="drop-icon">▶</div>
+        <p class="drop-title">Drop a video here</p>
+        <p class="drop-hint">or click to browse · .mp4 .mov .m4v · stays on your device</p>
+      </div>
+    </div>
+
+    <div id="analysis" hidden>
+      <div class="stat-grid" id="statGrid"></div>
+      <h3 class="verdict-head">Verdict</h3>
+      <ul class="checks" id="checks"></ul>
+      <video id="probe" muted playsinline preload="metadata"></video>
+    </div>
+  </section>
+
+  <!-- ─────────────── RECIPE ─────────────── -->
+  <section id="recipe" class="panel">
+    <h2><span class="num">3</span> Your recipe</h2>
+    <p class="sub">Updates live from your answers above. Copy the block that matches your machine.</p>
+
+    <div class="spec-card" id="specCard"></div>
+
+    <div class="tabs" role="tablist">
+      <button class="tab is-active" data-tab="cpu" role="tab">Any computer (CPU)</button>
+      <button class="tab" data-tab="mac" role="tab">Mac (Apple silicon)</button>
+      <button class="tab" data-tab="nvidia" role="tab">Windows + NVIDIA</button>
+      <button class="tab" data-tab="editor" role="tab">Premiere / Resolve / Final Cut</button>
+    </div>
+
+    <div class="codewrap">
+      <button class="copy" id="copyBtn" type="button">Copy</button>
+      <pre><code id="cmd"></code></pre>
+    </div>
+    <p class="code-note" id="cmdNote"></p>
+  </section>
+
+  <!-- ─────────────── CONVERTER ─────────────── -->
+  <section id="convert" class="panel">
+    <h2><span class="num">4</span> Convert here (optional)</h2>
+    <p class="sub">
+      Runs FFmpeg compiled to WebAssembly, inside this tab. Honest warning: a browser is
+      roughly 10–50× slower than the desktop command above, and very large 4K files can
+      exhaust the browser's memory. Great for a 10–30 second clip. For a 3-minute 4K120
+      export, use the command in step 3.
+    </p>
+    <div class="convert-box">
+      <button class="btn btn-primary" id="convertBtn" type="button" disabled>Load a file in step 2 first</button>
+      <div class="progress" id="convProgress" hidden><div class="progress-bar" id="convBar"></div></div>
+      <p class="conv-log" id="convLog"></p>
+      <a class="btn btn-primary" id="convDownload" hidden download>Download optimized file</a>
+    </div>
+  </section>
+
+  <!-- ─────────────── STEPS ─────────────── -->
+  <section id="steps" class="panel">
+    <h2><span class="num">5</span> The upload, step by step</h2>
+    <p class="sub">Do these in order. Steps 4, 5 and 7 are where most people lose their quality.</p>
+
+    <ol class="steps">
+      <li>
+        <h3>Export your master at full quality</h3>
+        <p>From your editor, export 4K vertical (2160×3840) at your source frame rate, highest
+        bitrate your editor offers, or ProRes / DNxHR if you have the disk space. This is your
+        master — you are not uploading this file. Never upload straight out of a phone editing app.</p>
+      </li>
+      <li>
+        <h3>Decide what 120fps means for you</h3>
+        <p>TikTok plays back at 60fps at most. So 120fps is not "extra smoothness you keep" — it's
+        a budget. Either conform it to 60fps (smooth real-time motion, half the frames discarded
+        cleanly) or stretch it to slow motion (2× at 60fps, 4× at 30fps, every frame used). Deciding
+        yourself beats letting TikTok's transcoder throw frames away at random. The question flow picks this for you.</p>
+      </li>
+      <li>
+        <h3>Run the recipe from step 3</h3>
+        <p>This produces the file you actually upload: correct resolution, correct frame rate,
+        constant frame rate, BT.709 colour, 2-second keyframes, faststart enabled, high bitrate
+        headroom so TikTok's encoder has clean data to work from.</p>
+      </li>
+      <li>
+        <h3>Turn on high-quality uploads in the app</h3>
+        <p>TikTok app → <em>Profile</em> → <em>☰ menu</em> → <em>Settings and privacy</em> →
+        <em>Content preferences</em> (older builds: <em>Data Saver</em>) → enable
+        <strong>High quality uploads</strong> / <strong>Upload HD</strong>. Also turn
+        <strong>Data saver</strong> off. This single toggle is the biggest free quality win, and
+        it is off by default for many accounts.</p>
+      </li>
+      <li>
+        <h3>Upload from the web, not the phone</h3>
+        <p>Go to <a href="https://www.tiktok.com/upload" target="_blank" rel="noopener noreferrer">tiktok.com/upload</a>
+        on a desktop browser. The web uploader accepts much larger files and higher bitrates than
+        the in-app picker, and it skips the phone's own pre-upload re-compression entirely.</p>
+      </li>
+      <li>
+        <h3>Do not touch the in-app editor</h3>
+        <p>Text, stickers, filters, transitions, speed ramps and trimming applied inside TikTok
+        force an extra generation of encoding — on top of the one you already can't avoid. Burn
+        everything into the file in your editor. If you need a trending sound, add only the sound.</p>
+      </li>
+      <li>
+        <h3>Post it once, on Wi-Fi, and don't use drafts</h3>
+        <p>Saving to drafts and reposting re-encodes again. Uploading on a weak cellular connection
+        makes some clients fall back to a lower-quality path. Upload, caption, post.</p>
+      </li>
+      <li>
+        <h3>Check the result on a real device</h3>
+        <p>Give it 10–20 minutes. TikTok often serves a low-quality proxy immediately after posting
+        and swaps in the good encode once processing finishes. Judging your upload in the first
+        two minutes is the most common false alarm there is.</p>
+      </li>
+    </ol>
+  </section>
+
+  <!-- ─────────────── FAQ ─────────────── -->
+  <section id="truth" class="panel">
+    <h2><span class="num">6</span> Straight answers</h2>
+
+    <details open>
+      <summary>Can I really upload with no compression at all?</summary>
+      <p>No, and be suspicious of anything that says otherwise. Every file you send is transcoded
+      on TikTok's servers into their own delivery ladder so it can stream to phones on bad
+      connections. The upload is re-encoded whether you like it or not. The realistic goal is
+      <em>one</em> generation of loss, from a pristine source, instead of three or four from a
+      phone export that was already squeezed twice before TikTok saw it.</p>
+    </details>
+
+    <details>
+      <summary>Then does uploading 4K instead of 1080p do anything?</summary>
+      <p>Yes, usually. Viewers almost never receive a true 4K stream, but a 4K source gives the
+      encoder more information per output pixel, so the 1080p it produces is sharper and holds up
+      better on detailed textures — hair, grass, fabric, text. It also signals a high-quality
+      source to TikTok's own processing. The cost is upload time. If your connection makes 4K
+      painful, a very high bitrate 1080p export is a perfectly good second place.</p>
+    </details>
+
+    <details>
+      <summary>Will my 120fps stay 120fps?</summary>
+      <p>No. Feed playback tops out at 60fps, and a lot of delivery is 30fps. 120fps is worth
+      shooting because it gives you clean slow motion and a sharper shutter, not because viewers
+      see 120 distinct frames. Convert it deliberately — see step 2 above.</p>
+    </details>
+
+    <details>
+      <summary>Why does my video look fine on my phone and terrible in the feed?</summary>
+      <p>Three usual suspects, in order: high-quality uploads is switched off in settings; the clip
+      was edited inside TikTok after upload; or you're looking at the temporary proxy encode in
+      the first few minutes after posting.</p>
+    </details>
+
+    <details>
+      <summary>H.264 or H.265/HEVC?</summary>
+      <p>H.264 High profile is the safest possible input — universally accepted, never rejected,
+      never silently mangled. HEVC can carry more detail per megabyte and is fine from the web
+      uploader, but occasionally causes colour shifts or rejected uploads depending on how it's
+      tagged. If something goes wrong with HEVC, re-export as H.264 before debugging anything else.
+      This tool defaults to H.264 for that reason.</p>
+    </details>
+
+    <details>
+      <summary>What about the file size limit?</summary>
+      <p>The ceiling depends on your region, account and whether you're on the app or the web
+      uploader, and TikTok changes the numbers regularly — so this tool doesn't hard-code them.
+      The web uploader is always the most generous. If an upload is rejected for size, lower the
+      bitrate cap in the recipe before you lower the resolution: bitrate is cheaper to give up
+      than pixels.</p>
+    </details>
+
+    <details>
+      <summary>Is my video sent to a server?</summary>
+      <p>No. The analyzer and the optional converter run in your browser with the file handle only.
+      This is a static site — there is no backend to send anything to. You can disconnect from the
+      internet after the page loads and the analyzer still works.</p>
+    </details>
+  </section>
+
+  <footer class="foot">
+    <p><strong>NoSquish</strong> — a static, no-backend prep tool for TikTok uploads.</p>
+    <p class="small">Not affiliated with, endorsed by, or connected to TikTok or ByteDance.
+    Platform behaviour and menu names change; verify settings paths in your own app build.</p>
+  </footer>
+
+</main>
+
+<script src="assets/app.js"></script>
+</body>
+</html>

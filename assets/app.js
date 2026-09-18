@@ -143,6 +143,7 @@
     const speed = s.ptsMul > 1 ? `${(1 / s.ptsMul).toFixed(2).replace(/0$/, '')}× (slower)` : 'Normal';
     const li = [];
     li.push(`Open <b>Shortcuts</b>, tap <span class="kv">+</span> to create a new shortcut.`);
+    li.push(`This re-encodes a finished file. If the file came out of an editing app, method A above is better — going through both means two encodes instead of one.`);
     li.push(`Add the action <span class="kv">Select Photos</span>. Open its options and turn on <span class="kv">Include Videos</span>. (<span class="kv">Select File</span> works too if your clip is in Files.)`);
     li.push(`Add <span class="kv">Encode Media</span> below it, then tap the arrow to expand its settings.`);
     li.push(`Set <span class="kv">Format</span> to <b>H.264</b>. Not HEVC — it is a better codec, but it is the one most likely to cause a colour shift or a rejected upload, and any advantage disappears when TikTok re-encodes anyway.`);
@@ -182,17 +183,6 @@
       `  -c:v h264_nvenc -preset p7 -tune hq -profile:v high -rc vbr -cq ${s.crf} \\`,
       `  -b:v ${s.mbps}M -maxrate ${Math.round(s.mbps*1.3)}M -bufsize ${s.mbps*2}M \\`,
       `  -g ${s.keyint} -bf 3 ${color} \\`, `  ${audio} -movflags +faststart \\`, `  tiktok-ready.mp4`].join('\n');
-    if (kind === 'editor') return [
-      `Format .............. H.264 / MP4  (not HEVC, not ProRes)`,
-      `Resolution .......... ${s.w} x ${s.h}  (vertical)`,
-      `Frame rate .......... ${s.fps} fps, constant - not variable, not "match source"`,
-      `Profile / Level ..... High / 5.2`,
-      `Bitrate ............. VBR 2-pass, target ${s.mbps} Mbps, max ${Math.round(s.mbps*1.3)} Mbps`,
-      `Keyframe every ...... ${s.keyint} frames (two seconds)`,
-      `Colour space ........ Rec. 709`,
-      `Audio ............... ${s.dropAudio ? 'none (slow motion)' : 'AAC 320 kbps, 48 kHz, stereo'}`,
-      `Also enable ......... fast start / web optimised`,
-      `Avoid ............... any "upload to social" preset; they downscale and cap bitrate`].join('\n');
     return [
       `ffmpeg -i input.mov \\`, `  -vf "${vf}" -r ${s.fps} \\`,
       `  -c:v libx264 -profile:v high -level 5.2 -preset ${s.preset} -crf ${s.crf} \\`,
@@ -200,11 +190,32 @@
       `  -x264-params "keyint=${s.keyint}:min-keyint=${s.fps}:scenecut=0:bframes=3:ref=4" \\`,
       `  ${color} \\`, `  ${audio} -movflags +faststart \\`, `  tiktok-ready.mp4`].join('\n');
   }
+  /* Fields to set in an editing app's export dialog. */
+  function editorRows(s) {
+    return [
+      ['Format',            'H.264 in MP4 — not HEVC, not ProRes'],
+      ['Resolution',        `${s.w} × ${s.h}`],
+      ['Frame rate',        `${s.fps} fps, constant — not variable, not "match source"`],
+      ['Profile / level',   'High / 5.2, if offered'],
+      ['Bitrate mode',      'VBR, two pass if offered'],
+      ['Target bitrate',    `${s.mbps} Mbps`],
+      ['Maximum bitrate',   `${Math.round(s.mbps * 1.3)} Mbps`],
+      ['Keyframe interval', `${s.keyint} frames, i.e. every 2 seconds`],
+      ['Colour space',      'Rec. 709'],
+      ['Audio',             s.dropAudio ? 'none — you chose slow motion' : 'AAC, 320 kbps, 48 kHz, stereo'],
+      ['Also enable',       'fast start / web optimised, if offered'],
+      ['Avoid',             'any "social" or "TikTok" preset — they downscale and cap bitrate']
+    ];
+  }
+  function editorNote(s) {
+    if (s.a.priority === 'speed') return 'If your app offers only a quality slider rather than a bitrate, put it at maximum anyway — the slider is coarse, and its top setting is usually still below the target above.';
+    return 'If your app offers only a quality slider rather than a bitrate, use its highest setting. A slider labelled "high" is often well under the target above.';
+  }
+
   const NOTES = {
     cpu:'Best quality per megabyte, slowest. Install with <code>brew install ffmpeg</code>, <code>winget install ffmpeg</code> or <code>sudo apt install ffmpeg</code>.',
     mac:'Uses the hardware encoder on Apple silicon. Much faster, very slightly softer at the same bitrate.',
     nvidia:'Uses NVENC on your GPU. <code>p7</code> is its highest quality preset; drop to <code>p5</code> if it is too slow.',
-    editor:'Set these fields by hand in the export dialog. Constant frame rate and the keyframe interval are the two most often left wrong.'
   };
   let currentTab = 'cpu';
   document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => {
@@ -228,6 +239,8 @@
       ['Keyframes', `every ${s.keyint} frames`]
     ].map(([k, v]) => `<tr><th>${k}</th><td>${v}</td></tr>`).join('');
     $('shortcutSteps').innerHTML = shortcutSteps(s).map(t => `<li>${t}</li>`).join('');
+    $('editorTable').innerHTML = editorRows(s).map(([k, v]) => `<tr><th>${k}</th><td>${v}</td></tr>`).join('');
+    $('editorNote').textContent = editorNote(s);
     $('cmd').textContent = buildCmd(currentTab);
     $('cmdNote').innerHTML = NOTES[currentTab];
   }

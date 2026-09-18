@@ -89,40 +89,81 @@
   <section id="make">
     <p class="sec-label">Step 3</p>
     <h2>Make the file</h2>
-    <p class="lede">
-      Two ways to do this on an iPhone. The first uses Apple's own encoder and is the one to
-      try first; the second runs in this page.
-    </p>
+
+    <div class="note">
+      <p><strong>Which of these do you need?</strong> Only one.</p>
+      <ul class="plan">
+        <li><b>Editing in an app?</b> Method A. Its export dialog is the right tool, and re-encoding its output afterwards only costs you quality.</li>
+        <li><b>Clip already finished, no editor?</b> Method B.</li>
+        <li><b>Need the frame rate changed</b> and nothing else will do it? Method C.</li>
+      </ul>
+      <p>If you are unsure whether your editor is good enough: export a short test with
+      its highest settings, then run it through step 2. The bitrate it reports is the
+      answer. Low bitrate means your editor is the bottleneck, and nothing further down
+      this page can recover detail it has already discarded.</p>
+    </div>
 
     <!-- Method A -->
     <div class="method">
       <header>
-        <h3>A. Shortcuts app</h3>
-        <span class="badge rec">Recommended on iPhone</span>
+        <h3>A. Export from your editing app</h3>
+        <span class="badge rec">Best, if you have one</span>
       </header>
       <div class="body">
+        <p class="lede"><b>Use this if</b> you are editing in an app with a real export
+        dialog — LumaFusion, VN, Premiere, Resolve, Final Cut. Set these fields:</p>
+        <table class="datatable" id="editorTable"></table>
+        <p class="lede" id="editorNote"></p>
         <p class="lede">
-          Shortcuts is built into iOS and its <span class="kv">Encode Media</span> action uses the
-          same hardware encoder as the Camera app. It handles 4K and long clips without running out
-          of memory, and it finishes in seconds rather than minutes.
+          Set your <b>project</b> frame rate rather than converting afterwards. An editor
+          conforms high frame rate clips to the project timeline as it renders, which is
+          cleaner than re-encoding a finished file. For slow motion, use the editor's own
+          retiming rather than the Speed setting in method B.
         </p>
-        <ol class="steps" id="shortcutSteps"></ol>
+        <div class="note">
+          <p><strong>Export to Files, not Photos.</strong> iCloud Photos does not
+          re-compress the originals in your library, but several routes out of Photos do —
+          Shared Albums compress heavily, and share-sheet exports can transcode without
+          telling you. Sending the export straight to Files and uploading from there avoids
+          the question entirely.</p>
+        </div>
+        <p class="lede">
+          Apps like CapCut, InShot and similar offer only a resolution and a quality slider,
+          and compress hard whatever you choose. Pick their highest settings, then check the
+          result in step 2 so at least you know what you are working with.
+        </p>
       </div>
     </div>
 
     <!-- Method B -->
     <div class="method">
       <header>
-        <h3>B. Convert in this page</h3>
+        <h3>B. Shortcuts app</h3>
+        <span class="badge">No editor needed</span>
+      </header>
+      <div class="body">
+        <p class="lede"><b>Use this if</b> your clip is already a finished file and you have
+        no editor to re-export it from. Shortcuts is built into iOS and its
+        <span class="kv">Encode Media</span> action uses the same hardware encoder as the
+        Camera app, so it handles 4K and long clips without running out of memory.</p>
+        <ol class="steps" id="shortcutSteps"></ol>
+      </div>
+    </div>
+
+    <!-- Method C -->
+    <div class="method">
+      <header>
+        <h3>C. Convert in this page</h3>
         <span class="badge" id="convBadge">Checking support…</span>
       </header>
       <div class="body">
+        <p class="lede"><b>Use this if</b> you need the frame rate changed and neither of the
+        above can do it — Shortcuts has no frame rate control in most iOS builds. Otherwise
+        prefer A or B; this is the slowest of the three and the most likely to run out of
+        memory on a long 4K clip.</p>
         <p class="cap" id="capLine">Checking what this browser can do…</p>
-        <p class="lede">
-          Use this if you want the exact target below without setting fields by hand. It reads your
-          file, re-times the frames, and writes a new MP4 using your device's video encoder. Keep
-          this tab in the foreground while it runs — iOS suspends background tabs.
-        </p>
+        <p class="lede">Keep this tab in the foreground while it runs — iOS suspends
+        background tabs.</p>
         <div class="btn-row">
           <button class="btn btn-primary" id="convertBtn" type="button" disabled>Choose a file in step 2 first</button>
           <a class="btn" id="convDownload" hidden download>Save the file</a>
@@ -133,12 +174,11 @@
     </div>
 
     <details>
-      <summary>C. FFmpeg, if you ever have a computer</summary>
+      <summary>D. FFmpeg, if you have a computer</summary>
       <div class="tabs" role="tablist">
         <button class="tab is-active" data-tab="cpu" role="tab">Any computer</button>
         <button class="tab" data-tab="mac" role="tab">Mac</button>
         <button class="tab" data-tab="nvidia" role="tab">Windows + NVIDIA</button>
-        <button class="tab" data-tab="editor" role="tab">Editing app</button>
       </div>
       <div class="codewrap">
         <button class="copy" id="copyBtn" type="button">Copy</button>
@@ -225,11 +265,13 @@
 
     <details>
       <summary>Which method should I actually use?</summary>
-      <p>Shortcuts, unless it will not do what you need. It uses Apple's hardware encoder, so it is
-      fast, it does not run out of memory on a 4K clip, and the result is a normal MP4. The in-page
-      converter exists for when you want the exact target without setting fields yourself, and for
-      frame-rate changes Shortcuts will not do. It is slower and, on a long 4K clip, may run out of
-      memory — the page will tell you rather than failing silently.</p>
+      <p>If you are editing in an app, method A — its export dialog produces the file in one
+      encode, and putting that output through B or C afterwards just adds a second. Use B when
+      the clip is already finished and you have nothing to re-export it from. Use C only when
+      you specifically need the frame rate changed, since Shortcuts cannot do that in most iOS
+      builds.</p>
+      <p>If you are not sure whether your editor is good enough, export a short test at its
+      highest settings and run it through step 2. The bitrate it reports tells you directly.</p>
     </details>
 
     <details>

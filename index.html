@@ -39,6 +39,58 @@
     </div>
   </section>
 
+  <section id="shoot">
+    <p class="sec-label">Before anything else</p>
+    <h2>What you shoot</h2>
+    <p class="lede">
+      Every choice below this one is damage control. The capture settings are the only
+      place you can add quality rather than preserve it, and a camera app with manual
+      controls — Final Cut Camera, Blackmagic Camera, the stock Camera app — puts them
+      in your hands.
+    </p>
+
+    <ol class="steps">
+      <li>
+        <b>Pick the frame rate for what you actually want.</b> Shooting 60fps for
+        normal-speed video means nothing on this page has to convert anything: it
+        uploads as shot. Shoot 120 only when you want slow motion. Choosing correctly
+        in the camera always beats converting afterwards, because no frames are
+        discarded and no second encode happens.
+      </li>
+      <li>
+        <b>Do not shoot in a log profile unless you can grade it.</b> Apple Log and
+        similar profiles deliberately record flat, grey, low-contrast images that carry
+        more range for colour grading later. Posted without grading they look washed
+        out and lifeless. If you have no editor, use the standard profile — this is the
+        single most common way a technically excellent capture ends up looking worse
+        than a casual one.
+      </li>
+      <li>
+        <b>ProRes is a format for editing, not uploading.</b> The files are enormous and
+        must be converted to H.264 before upload regardless. If the clip is going
+        straight to TikTok, record HEVC or H.264 and skip a conversion step.
+      </li>
+      <li>
+        <b>Frame vertically while shooting.</b> Cropping a landscape clip to 9:16
+        afterwards throws away most of your pixels; the analyzer below will flag it, but
+        it cannot undo it.
+      </li>
+      <li>
+        <b>Lock exposure and white balance</b> if your app allows it. Automatic exposure
+        hunting mid-shot spends bitrate on brightness changes nobody asked for, and it
+        is the main thing manual camera apps are good for.
+      </li>
+    </ol>
+
+    <div class="note">
+      <p><strong>A camera app is not an editor.</strong> Final Cut Camera, Blackmagic
+      Camera and the stock Camera app record — they have no timeline and no export
+      dialog. If one of those is where your footage comes from and you have nothing to
+      edit in, method A in step 3 does not apply to you, and method B or C is your
+      route.</p>
+    </div>
+  </section>
+
   <section id="setup">
     <p class="sec-label">Step 1</p>
     <h2>Your setup</h2>
@@ -93,8 +145,8 @@
     <div class="note">
       <p><strong>Which of these do you need?</strong> Only one.</p>
       <ul class="plan">
-        <li><b>Editing in an app?</b> Method A. Its export dialog is the right tool, and re-encoding its output afterwards only costs you quality.</li>
-        <li><b>Clip already finished, no editor?</b> Method B.</li>
+        <li><b>Editing in an app with an export dialog?</b> Method A. It is the right tool, and re-encoding its output afterwards only costs you quality.</li>
+        <li><b>Shooting on a camera app, with no editor?</b> Method B. A camera app has no export dialog, so method A has nothing for you to set.</li>
         <li><b>Need the frame rate changed</b> and nothing else will do it? Method C.</li>
       </ul>
       <p>If you are unsure whether your editor is good enough: export a short test with

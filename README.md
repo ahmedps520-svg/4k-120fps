@@ -1,74 +1,99 @@
-# NoSquish
+# TikTok Upload Prep
 
-A static, no-backend web tool for preparing 4K / 120fps footage for TikTok so the
-platform's unavoidable re-encode costs you as little quality as possible.
+A static, browser-only tool for getting video onto TikTok in the best condition
+the platform will allow — built for people working from an iPhone with no
+computer available.
 
-**Live site:** https://ahmedps520-svg.github.io/4k-120fps/
+**Live:** https://ahmedps520-svg.github.io/4k-120fps/
 
-## The honest premise
+## The premise, stated honestly
 
-There is no way to upload to TikTok without compression. Every upload is
-transcoded server-side into TikTok's own delivery ladder — no website, app or
-trick disables that. Anything claiming otherwise is wrong.
+TikTok re-encodes every upload on its servers. That happens after the file
+arrives and cannot be disabled by any setting, format or upload route. This
+project does not claim to bypass it.
 
-What is genuinely controllable is *what that encoder receives*. A clean,
-high-bitrate, correctly-sized, correctly-framerated file survives one generation
-of encoding almost invisibly. A phone-app export with in-app stickers burned in
-has already been through two or three generations before TikTok even starts. This
-tool closes that gap.
+What it does is control the input to that encode. A file at the right resolution
+and frame rate, with enough bitrate and no prior compression, survives one encode
+almost unchanged. A file already squeezed by a phone app and then edited inside
+TikTok has been through three or four. That gap is most of what people mean when
+they say their uploads look bad.
 
 ## What it does
 
-| Section | What it is |
-| --- | --- |
-| Question flow | Six questions — source format, upload path, what to do with 120fps, in-app editing, clip length, quality-vs-size priority — that drive every number in the recipe. |
-| Analyzer | Drop a video in; it reads resolution, duration, size and average bitrate, and **measures the true frame rate** by sampling per-frame presentation timestamps via `requestVideoFrameCallback`. Then it grades the file against TikTok's delivery reality. |
-| Recipe | A generated spec card plus copy-paste FFmpeg commands for CPU (libx264), Apple silicon (VideoToolbox) and NVIDIA (NVENC), plus a field-by-field settings sheet for Premiere / Resolve / Final Cut. |
-| Converter | Optional in-browser transcode via `ffmpeg.wasm`, with an upfront warning that it is far slower than the desktop command and memory-limited on large 4K files. |
-| Steps | The eight-step upload procedure, including the "high quality uploads" toggle and why the web uploader beats the app. |
-| FAQ | Straight answers, including why "no compression" is not achievable. |
+- **Question flow** — five questions (source format, upload route, what the extra
+  frames should become, clip length, quality priority) that drive every number
+  used elsewhere on the page.
+- **Analyzer** — reads resolution, duration, size and average bitrate from a local
+  file, and measures the true frame rate from per-frame presentation timestamps
+  via `requestVideoFrameCallback`. Flags landscape sources, sub-1080p sources and
+  footage that has already been compressed.
+- **Method A — Shortcuts** — generated step-by-step instructions for the iOS
+  Shortcuts `Encode Media` action, which uses Apple's hardware encoder. Values
+  come from the answers above.
+- **Method B — in-page conversion** — a WebCodecs transcode pipeline: `mp4box`
+  demux → `VideoDecoder` → frame retiming and letterboxed scaling on a canvas →
+  `VideoEncoder` → `mp4-muxer`, with the index written at the front. This is the
+  only on-device way to change frame rate precisely.
+- **Method C — FFmpeg** — commands for libx264, VideoToolbox and NVENC, plus an
+  export settings sheet, for when a computer is available.
+- **Upload steps** for the desktop site from Safari, and notes covering the
+  questions this raises.
+
+## Frame rate is the interesting part
+
+Playback tops out at 60fps, so 120fps source frames are a budget rather than a
+feature. The tool makes the choice explicit:
+
+| Choice | How it is done | Result |
+| --- | --- | --- |
+| Normal speed, 60fps | every second frame kept | smooth real time, audio untouched |
+| Half speed | `setpts` ×2 / retimed to a 60fps grid | every frame used, audio removed |
+| Quarter speed | `setpts` ×4 / retimed to a 30fps grid | every frame used, audio removed |
+| Normal speed, 30fps | even reduction | most bitrate per remaining frame |
+
+Method B implements this by mapping each decoded frame's presentation time onto
+the output frame grid and keeping the first frame that lands in each slot, so
+conforming and slow motion are the same operation with a different multiplier.
 
 ## Privacy
 
-The video never leaves the browser. There is no backend, no upload endpoint and
-no analytics. The analyzer works with a local object URL; the optional converter
-runs FFmpeg compiled to WebAssembly in the same tab. The only network requests
-after page load are for the FFmpeg WebAssembly build, and only if you click
-convert.
+No backend, no upload endpoint, no analytics, no third-party requests. The two
+libraries method B needs are vendored in `assets/vendor/` and loaded lazily, only
+when a conversion starts.
 
-## Key technical choices
+## Tested
 
-- **120fps is treated as a budget, not a feature.** TikTok playback caps at 60fps,
-  so the tool makes you choose deliberately — conform to 60 (clean 2:1 decimation),
-  or stretch to 2×/4× slow motion (`setpts`, every frame used, audio dropped) —
-  rather than letting the platform transcoder discard frames arbitrarily.
-- **4K only when uploading from desktop.** Through the phone app the file gets
-  pre-compressed and downscaled locally anyway, so the tool targets 1080×1920 there
-  instead and says why.
-- **CRF plus a bitrate ceiling**, not a fixed bitrate — quality-targeted encoding
-  with `-maxrate`/`-bufsize` only to keep upload size sane.
-- **2-second keyframe interval, BT.709 tagging, `+faststart`, `yuv420p`** — the
-  unglamorous metadata that prevents washed-out colour and slow first-frame loads.
-- **`scale` + `pad`, never crop** — a non-9:16 source is letterboxed rather than
-  silently losing its edges.
+The conversion pipeline is verified end to end in headless Chromium against a
+generated 120fps clip: conform to 60fps produces 121 frames over 2.02s, half
+speed produces all 240 frames over 4.00s, 30fps produces 61 frames, and a
+non-9:16 target letterboxes without cropping.
+
+Two things could not be exercised in that environment, because it ships without
+H.264 and the egress policy blocks `github.io`:
+
+- the H.264 encode and decode path specifically (the pipeline was proven with
+  VP9 instead), and
+- loading the deployed page.
+
+Method B therefore probes `VideoEncoder.isConfigSupported` and
+`VideoDecoder.isConfigSupported` on the visitor's own device and reports what it
+finds before offering the button, rather than assuming support and failing
+mid-conversion. Method A does not depend on any of it.
 
 ## Running locally
 
-It is plain HTML, CSS and JavaScript with no build step:
+No build step:
 
 ```sh
 python3 -m http.server 8000
-# then open http://localhost:8000
 ```
 
 ## Deployment
 
-Pushing to `main` triggers `.github/workflows/pages.yml`, which publishes the
-repository root to GitHub Pages. This requires **Settings → Pages → Source:
-GitHub Actions** to be selected once.
+Pushing to `main` runs `.github/workflows/pages.yml`, which publishes the
+repository root to GitHub Pages.
 
 ---
 
-Not affiliated with, endorsed by, or connected to TikTok or ByteDance. Platform
-behaviour, menu paths and file-size limits change frequently; verify settings
-paths in your own app build.
+Not affiliated with or endorsed by TikTok or ByteDance. Menu paths and upload
+limits change between app versions and regions.
